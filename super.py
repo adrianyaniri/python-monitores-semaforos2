@@ -8,7 +8,6 @@ logging.basicConfig(format='%(asctime)s.%(msecs)03d [%(threadName)s] - %(message
 colaCaja = []
 clientes = []
 maxClientes = 3
-semaforoCliente = threading.Semaphore()
 semaforoCajero = threading.Semaphore()
 
 
@@ -17,20 +16,19 @@ class Cliente(threading.Thread):
         super().__init__()
 
     def entrarAlSuper(self):
-
         if len(clientes) > maxClientes:
             logging.info('mucha gente, me voy a casa')
-        semaforoCliente.acquire()
-        clientes.append(self)
+        clientes.append(1)
         time.sleep(2)
-        logging.info('voy a la caja')
-        colaCaja.append(self)
+        logging.info('comprando')
 
     def run(self):
-        while True:
-            self.entrarAlSuper()
-            time.sleep(2)
-            semaforoCliente.release()
+        # while True:
+        self.entrarAlSuper()
+        colaCaja.append(1)
+        time.sleep(2)
+        logging.info('voy a la caja')
+        semaforoCajero.acquire()
 
 
 class Cajero(threading.Thread):
@@ -39,21 +37,20 @@ class Cajero(threading.Thread):
 
     def run(self):
         while True:
-            if len(colaCaja) > 0:
-                semaforoCajero.acquire()
+             while len(colaCaja) == 0:
                 colaCaja.pop(0)
                 logging.info('atendiendo')
-                semaforoCliente.release()
+                semaforoCajero.acquire()
                 time.sleep(2)
                 logging.info('termine de antender')
-            semaforoCajero.release()
-            logging.info('me fui a dormir')
+        logging.info('me fui a dormir')
+
+# agregar fun espera con random
 
 
-cajero: Cajero = Cajero()
+cajero = Cajero()
 
 
 cajero.start()
-
-for i in range(clientes):
+for i in range(5):
     Cliente(i).start()
